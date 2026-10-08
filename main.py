@@ -1,102 +1,88 @@
-TEXTS = [
-    '''Situated about 10 miles west of Kemmerer,
-    Fossil Butte is a ruggedly impressive
-    topographic feature that rises sharply
-    some 1000 feet above Twin Creek Valley
-    to an elevation of more than 7500 feet
-    above sea level. The butte is located just
-    north of US 30 and the Union Pacific Railroad,
-    which traverse the valley.''',
-    '''At the base of Fossil Butte are the bright
-    red, purple, yellow and gray beds of the Wasatch
-    Formation. Eroded portions of these horizontal
-    beds slope gradually upward from the valley floor
-    and steepen abruptly. Overlying them and extending
-    to the top of the butte are the much steeper
-    buff-to-white beds of the Green River Formation,
-    which are about 300 feet thick.''',
-    '''The monument contains 8198 acres and protects
-    a portion of the largest deposit of freshwater fish
-    fossils in the world. The richest fossil fish deposits
-    are found in multiple limestone layers, which lie some
-    100 feet below the top of the butte. The fossils
-    represent several varieties of perch, as well as
-    other freshwater genera and herring similar to those
-    in modern oceans. Other fish such as paddlefish,
-    garpike and stingray are also present.'''
-]
 
-USERS = {
-    "bob": "123",
-    "ann": "pass123",
-    "mike": "password123",
-    "liz": "pass123"
-}
+import random
 
-username = input("username: ")
-password = input("password: ")
 
-if username not in USERS or USERS[username] != password:
-    print("unregistered user, terminating the program..")
-    exit()
+def generate_secret_number() -> str:
+    """Generate a four-digit number with unique digits."""
+    first_digit = random.choice("123456789")
+    remaining_digits = [digit for digit in "0123456789"
+                        if digit != first_digit]
+    other_digits = random.sample(remaining_digits, 3)
+    return first_digit + "".join(other_digits)
 
-print("-" * 40)
-print(f"Welcome to the app, {username}")
-print(f"We have {len(TEXTS)} texts to be analyzed.")
-print("-" * 40)
 
-choice = input(f"Enter a number btw. 1 and {len(TEXTS)} to select: ")
+def print_intro() -> None:
+    """Display the welcome message and game instructions."""
+    print("Hi there!")
+    print("-" * 40)
+    print("I've generated a random 4 digit number for you.")
+    print("Let's play a bulls and cows game.")
+    print("-" * 40)
+    print("Enter a number:")
+    print("-" * 40)
 
-if not choice.isdigit():
-    print("Invalid input, terminating the program..")
-    exit()
 
-choice = int(choice)
+def validate_guess(guess: str) -> str:
+    """Check whether the player's guess is valid."""
+    if len(guess) != 4:
+        return "Your number must contain exactly 4 digits."
+    if not guess.isdigit():
+        return "Your number must contain only digits."
+    if guess[0] == "0":
+        return "Your number must not start with zero."
+    if len(set(guess)) != 4:
+        return "Your number must not contain duplicate digits."
+    return ""
 
-if choice < 1 or choice > len(TEXTS):
-    print("Invalid input, terminating the program..")
-    exit()
 
-text = TEXTS[choice - 1]
+def count_bulls_and_cows(
+    secret: str, guess: str
+) -> tuple[int, int]:
+    """Count matching digits in correct and incorrect positions."""
+    bulls = sum(
+        secret[index] == guess[index]
+        for index in range(4)
+    )
+    cows = sum(digit in secret for digit in guess) - bulls
+    return bulls, cows
 
-for znak in ",.:;!?()-\n":
-    text = text.replace(znak, " ")
 
-words = text.split()
+def format_result(count: int, singular: str, plural: str) -> str:
+    """Return the correct singular or plural word."""
+    word = singular if count == 1 else plural
+    return f"{count} {word}"
 
-titlecase = 0
-uppercase = 0
-lowercase = 0
-numbers = 0
-sum_numbers = 0
-lengths = {}
 
-for word in words:
-    if word.istitle():
-        titlecase += 1
-    elif word.isupper():
-        uppercase += 1
-    elif word.islower():
-        lowercase += 1
+def play_game() -> None:
+    """Run the game until the secret number is guessed."""
+    secret = generate_secret_number()
+    attempts = 0
+    print_intro()
 
-    if word.isnumeric():
-        numbers += 1
-        sum_numbers += int(word)
+    while True:
+        guess = input(">>> ").strip()
+        error = validate_guess(guess)
 
-    length = len(word)
-    lengths[length] = lengths.get(length, 0) + 1
+        if error:
+            print(f"Invalid input: {error}")
+            print("-" * 40)
+            continue
 
-print("-" * 40)
-print(f"There are {len(words)} words in the selected text.")
-print(f"There are {titlecase} titlecase words.")
-print(f"There are {uppercase} uppercase words.")
-print(f"There are {lowercase} lowercase words.")
-print(f"There are {numbers} numeric strings.")
-print(f"The sum of all the numbers {sum_numbers}")
+        attempts += 1
 
-print("-" * 40)
-print("LEN|  OCCURRENCES  |NR.")
-print("-" * 40)
+        if guess == secret:
+            print("Correct, you've guessed the right number")
+            print(f"in {attempts} guesses!")
+            print("-" * 40)
+            print("That's amazing!")
+            break
 
-for length in sorted(lengths):
-    print(f"{length:>3}|{'*' * lengths[length]:<15}|{lengths[length]}")
+        bulls, cows = count_bulls_and_cows(secret, guess)
+        bull_text = format_result(bulls, "bull", "bulls")
+        cow_text = format_result(cows, "cow", "cows")
+        print(f"{bull_text}, {cow_text}")
+        print("-" * 40)
+
+
+if __name__ == "__main__":
+    play_game()
